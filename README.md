@@ -1,6 +1,7 @@
 # Cube Baby Editor
 
-Editor de presets para o pedal **M-VAVE / Cuvave CUBE Baby** (versão para guitarra elétrica) no **Linux**.
+Editor de presets para o pedal **M-VAVE / Cuvave CUBE Baby** (versão para guitarra elétrica) no
+**Windows** e no **Linux**.
 Ajuste os knobs pelo computador, ouça na hora, grave nos presets A/B/C do pedal e guarde quantos sons
 quiser no seu computador.
 
@@ -12,7 +13,30 @@ quiser no seu computador.
 
 ---
 
-## Instalação
+## ⬇️ Download (jeito fácil)
+
+Baixe o arquivo do seu sistema na página de **[Releases](https://github.com/GusCfer/CubeBaby-editor/releases/latest)**.
+Não precisa instalar Python nem driver.
+
+| Sistema | Arquivo | Como abrir |
+|---|---|---|
+| **Windows 10/11** | `CubeBabyEditor-windows.exe` | Dois cliques. Se aparecer *"O Windows protegeu o computador"*, clique em **Mais informações → Executar assim mesmo** (o app não é assinado digitalmente). |
+| **Linux (x86_64)** | `CubeBabyEditor-linux-x86_64` | `chmod +x CubeBabyEditor-linux-x86_64` e depois `./CubeBabyEditor-linux-x86_64` (ou dois cliques no gerenciador de arquivos). |
+
+> No Ubuntu/Debian, se a janela não abrir, instale `sudo apt install libxcb-cursor0`.
+
+Onde ficam seus presets e backups:
+
+| Sistema | Pasta |
+|---|---|
+| Windows | `%APPDATA%\cube-baby-editor\` |
+| Linux | `~/.local/share/cube-baby-editor/` |
+
+---
+
+## Instalação pelo código-fonte (Linux)
+
+Prefira esse jeito se quiser acompanhar as atualizações com `git pull` ou mexer no código.
 
 ### 1. Instale as dependências
 
@@ -120,7 +144,8 @@ exportar o banco atual ou restaurar um backup no pedal.
 
 | Problema | Solução |
 |---|---|
-| "Pedal não encontrado" | Confira o cabo (alguns cabos USB só carregam, não transmitem dados). Rode `amidi -l`: deve aparecer `USB2.0 Device MIDI 1`. |
+| "Pedal não encontrado" | Confira o cabo (alguns cabos USB só carregam, não transmitem dados). No Linux, `amidi -l` deve mostrar `USB2.0 Device MIDI 1`; no Windows, o pedal aparece no Gerenciador de Dispositivos em *Dispositivos de som, vídeo e jogos*. |
+| Windows: "Sem resposta" ou pedal ocupado | No Windows só um programa por vez pode usar o MIDI do pedal: feche o CubeSuite, DAWs e outros editores. |
 | "Sem resposta do pedal" | Feche outros programas que usam o pedal (CubeSuite no Wine, DAWs) e clique em **Conectar**. |
 | "Modelo não suportado" | Seu pedal não é o CUBE Baby elétrico (`0x4F06`). Para o modelo AC use o cubebaby-editor. |
 | Mexo na tela e o som não muda | Deixe o pedal no mesmo preset (A/B/C) selecionado no editor. |
@@ -157,6 +182,7 @@ Estrutura do código:
 | `cubebaby_el/device.py` | conexão USB-MIDI, mapa de parâmetros, trava de segurança |
 | `cubebaby_el/library.py` | presets e backups em JSON |
 | `cubebaby_el/gui.py` | interface PyQt6 |
+| `run.py` + `.github/workflows/release.yml` | build do `.exe`/binário (PyInstaller) e publicação nas Releases ao criar uma tag `v*` |
 </details>
 
 ## Créditos
@@ -165,3 +191,9 @@ Estrutura do código:
 - [MrGariZack/cubecontrol](https://github.com/MrGariZack/cubecontrol) — mapa de parâmetros do CUBE Baby elétrico (MIT)
 
 Licença: [MIT](LICENSE).
+
+## Publicar uma nova versão (para o mantenedor)
+
+1. Atualize `__version__` em `cubebaby_el/__init__.py`.
+2. `git commit -am "v1.x.y" && git tag v1.x.y && git push && git push origin v1.x.y`
+3. O GitHub Actions compila Windows e Linux e cria a Release sozinho (aba **Actions** mostra o progresso).

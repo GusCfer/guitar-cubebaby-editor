@@ -24,7 +24,7 @@ Type=Application
 Name=Cube Baby Editor
 Comment=Editor de presets do M-VAVE/Cuvave CUBE Baby
 Exec="$DIR/cube-baby-editor"
-Icon=$DIR/icon.svg
+Icon=$DIR/cubebaby_el/assets/icon.svg
 Terminal=false
 Categories=AudioVideo;Audio;Music;
 EOF

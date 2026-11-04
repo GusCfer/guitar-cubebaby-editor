@@ -1,0 +1,94 @@
+name: Build e Release
+
+# Publicar uma versão:  git tag v1.0.0 && git push origin v1.0.0
+# Também dá para rodar manualmente (aba Actions → Run workflow) para só gerar os arquivos.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            artifact: CubeBabyEditor-windows.exe
+            built: dist/CubeBabyEditor.exe
+          - os: ubuntu-22.04   # glibc antiga = binário roda na maioria das distros
+            artifact: CubeBabyEditor-linux-x86_64
+            built: dist/CubeBabyEditor
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Dependências do sistema (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev
+
+      - name: Dependências Python
+        run: python -m pip install --upgrade pip && pip install -r requirements.txt pyinstaller==6.16.0
+
+      - name: Teste rápido (importa tudo)
+        run: python -c "import cubebaby_el.gui, cubebaby_el.device, cubebaby_el.library; print('ok')"
+        env:
+          QT_QPA_PLATFORM: offscreen
+
+      - name: PyInstaller
+        run: >
+          pyinstaller --noconfirm --onefile --windowed
+          --name CubeBabyEditor
+          --icon cubebaby_el/assets/icon.ico
+          --add-data "cubebaby_el/assets:cubebaby_el/assets"
+          run.py
+
+      - name: Renomear
+        shell: bash
+        run: mv "${{ matrix.built }}" "${{ matrix.artifact }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.artifact }}
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
+
+      - run: chmod +x out/CubeBabyEditor-linux-x86_64 && ls -la out
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: Cube Baby Editor ${{ github.ref_name }}
+          files: out/*
+          body: |
+            ## Download
+
+            | Sistema | Arquivo |
+            |---|---|
+            | **Windows 10/11** | `CubeBabyEditor-windows.exe` — baixe e dê dois cliques |
+            | **Linux (x86_64)** | `CubeBabyEditor-linux-x86_64` — `chmod +x` e execute |
+
+            Não precisa instalar Python nem driver: o pedal é reconhecido automaticamente pelo sistema.
+
+            **Windows:** como o app não é assinado digitalmente, o SmartScreen pode avisar
+            "O Windows protegeu o computador". Clique em **Mais informações → Executar assim mesmo**.
+
+            **Linux:** se a janela não abrir em distros Ubuntu/Debian, instale `libxcb-cursor0`.
+
+            Feche o CubeSuite (ou qualquer programa usando o pedal) antes de abrir o editor.
+          generate_release_notes: true

@@ -4,12 +4,21 @@ from __future__ import annotations
 import json
 import os
 import re
+import sys
 import time
 from pathlib import Path
 
 from .device import BANK_SIZE, PARAMS, PARAM_BY_KEY, SECTIONS
 
-DATA_DIR = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local/share")) / "cube-baby-editor"
+def _data_root() -> Path:
+    if sys.platform == "win32":
+        return Path(os.environ.get("APPDATA", Path.home() / "AppData/Roaming"))
+    if sys.platform == "darwin":
+        return Path.home() / "Library/Application Support"
+    return Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local/share"))
+
+
+DATA_DIR = _data_root() / "cube-baby-editor"
 PRESET_DIR = DATA_DIR / "presets"
 BACKUP_DIR = DATA_DIR / "backups"
 FORMAT = "cube-baby-preset/1"

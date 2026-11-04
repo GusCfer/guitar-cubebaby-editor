@@ -13,6 +13,12 @@ from PyQt6.QtCore import Qt, pyqtSignal
 
 from .device import (CubeBaby, DeviceError, PARAMS, SECTIONS, SLOT_COUNT, SLOT_SIZE)
 from .library import Library, backup_bank, dict_to_fields, read_bank_file, BACKUP_DIR
+from . import __version__
+
+ASSETS = Path(__file__).resolve().parent / "assets"
+# No Windows (WinMM) o pedal aplica melhor as escritas ao vivo com um "identify" antes de cada rajada
+# (observado pelo projeto cubecontrol). No Linux basta depois de um tempo parado.
+PRELUDE_IDLE = 0.0 if sys.platform == "win32" else 1.5
 
 # ---------------------------------------------------------------- tema
 
@@ -361,7 +367,7 @@ class Worker(threading.Thread):
                 if not self.dev or not items:
                     continue
                 try:
-                    if time.monotonic() - self._last_live > 1.5:
+                    if time.monotonic() - self._last_live > PRELUDE_IDLE:
                         self.dev.info()
                     for (slot, off), v in items.items():
                         self.dev.write_live(slot, off, v)
@@ -387,7 +393,7 @@ class Worker(threading.Thread):
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Cube Baby Editor")
+        self.setWindowTitle(f"Cube Baby Editor {__version__}")
         self.setMinimumSize(1060, 620)
         self.lib = Library()
         self.bank = bytearray(48)   # estado de trabalho (o que está soando)
@@ -879,6 +885,13 @@ def main():
     app = QtWidgets.QApplication(sys.argv)
     app.setApplicationName("Cube Baby Editor")
     app.setDesktopFileName("cube-baby-editor")
+    app.setWindowIcon(QtGui.QIcon(str(ASSETS / ("icon.ico" if sys.platform == "win32" else "icon.png"))))
+    if sys.platform == "win32":
+        try:  # ícone próprio na barra de tarefas em vez do ícone do Python
+            import ctypes
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("GusCfer.CubeBabyEditor")
+        except Exception:  # noqa: BLE001
+            pass
     app.setStyleSheet(STYLE)
     w = MainWindow()
     w.resize(1120, 660)
