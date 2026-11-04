@@ -15,7 +15,7 @@ quiser no seu computador.
 
 ## ⬇️ Download (jeito fácil)
 
-Baixe o arquivo do seu sistema na página de **[Releases](https://github.com/GusCfer/CubeBaby-editor/releases/latest)**.
+Baixe o arquivo do seu sistema na página de **[Releases](https://github.com/GusCfer/guitar-cubebaby-editor/releases/latest)**.
 Não precisa instalar Python nem driver.
 
 | Sistema | Arquivo | Como abrir |
@@ -65,7 +65,7 @@ O `python-rtmidi` pode precisar dos pacotes de desenvolvimento do ALSA (`libasou
 ### 2. Baixe o editor
 
 ```sh
-git clone https://github.com/GusCfer/CubeBaby-editor.git cube-baby-editor
+git clone https://github.com/GusCfer/guitar-cubebaby-editor.git cube-baby-editor
 cd cube-baby-editor
 ```
 
