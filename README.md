@@ -111,12 +111,48 @@ cd cube-baby-editor && git pull
 | Gravar no pedal | botão **Gravar no pedal** ou **Ctrl+S** |
 | Desfazer edição | **Descartar alterações** volta ao que está gravado no pedal |
 
+### 📱 Controle pelo celular
+
+<img src="docs/screenshot-celular.png" alt="Controle pelo celular" width="300" align="right">
+
+1. No computador, clique em **📱 Celular** (canto superior direito).
+2. Aponte a câmera do celular para o QR code e abra o link. O celular precisa estar na **mesma rede Wi-Fi**.
+3. Pronto: sliders, botões − / +, toque no valor para digitar, troca de A/B/C, liga/desliga de seções,
+   **Gravar no pedal** e seus presets salvos — tudo pelo navegador do celular, sem instalar nada.
+
+O computador continua ligado ao pedal pelo USB e repassa os comandos; dá para usar a tela do PC e o celular ao
+mesmo tempo. O link tem uma chave aleatória; **Desligar acesso** invalida o link (um novo QR é gerado da próxima
+vez).
+
+> **Linux com firewall (ufw/firewalld):** libere a porta uma vez, só para a rede local, por exemplo
+> `sudo ufw allow from 192.168.0.0/16 to any port 8765 proto tcp`.
+> **Windows:** na primeira vez o Windows pergunta sobre o firewall — permita em **redes privadas**.
+
 ### Meus presets (no computador)
 
+- **📝 Novo preset (digitar valores)** (Ctrl+N): formulário com nome, os 10 valores e o liga/desliga das seções.
+  Digite e use **Tab** para pular de campo (no celular, **Enter**). Começa com o som atual; **Valores padrão**
+  zera para um som neutro. **Salvar** só guarda; **Salvar e carregar** já aplica no pedal.
 - **＋ Salvar som atual** guarda o som em `~/.local/share/cube-baby-editor/presets/`.
 - **Duplo clique** num preset da lista carrega ele no preset atual (A/B/C) — depois é só gravar no pedal.
 - Botão direito: substituir, renomear, exportar ou excluir. **Importar/Exportar** usam arquivos `.json`,
   fáceis de compartilhar.
+
+<br clear="right">
+
+### 🔗 Importar presets do site cube-baby-presets
+
+1. Copie o link de um preset em [cube-baby-presets.vercel.app](https://cube-baby-presets.vercel.app/pt/presets/)
+   (modelo **Cube Baby**), por exemplo `https://cube-baby-presets.vercel.app/pt/presets/902`.
+2. No editor, clique em **🔗 Importar do site** e cole o link (ou só o número, `902`).
+   No celular: aba **Presets → 🔗 Importar do site**.
+3. O preset é salvo em *Meus presets* com nome e autor e já é carregado no preset atual.
+
+Como a página do site é montada por JavaScript, o editor a abre num navegador do próprio computador
+(**Chrome, Edge, Brave ou Chromium**) em modo invisível e lê os valores da tela. No Windows o Edge já vem
+instalado. A primeira importação leva uns 20 s (o navegador prepara um perfil próprio do editor); as próximas
+levam cerca de 1 s. Também dá para colar o texto da página (Ctrl+A, Ctrl+C) no lugar do link.
+Presets do Cube Baby AC ou Bass são recusados, porque os knobs são outros.
 
 ### Backup
 
@@ -151,6 +187,7 @@ exportar o banco atual ou restaurar um backup no pedal.
 | Mexo na tela e o som não muda | Deixe o pedal no mesmo preset (A/B/C) selecionado no editor. |
 | Girei um knob físico e a tela não mudou | É normal: o pedal não informa a posição dos knobs físicos ao computador. |
 | `ModuleNotFoundError: PyQt6` / `rtmidi` | Instale as dependências do passo 1. |
+| Celular não abre a página | Confira se está na mesma rede Wi-Fi (não na rede de visitantes nem nos dados móveis), libere a porta 8765 no firewall e, na janela do QR, tente outro endereço em **Rede**. |
 
 ---
 
@@ -182,6 +219,9 @@ Estrutura do código:
 | `cubebaby_el/device.py` | conexão USB-MIDI, mapa de parâmetros, trava de segurança |
 | `cubebaby_el/library.py` | presets e backups em JSON |
 | `cubebaby_el/gui.py` | interface PyQt6 |
+| `cubebaby_el/remote.py` + `assets/remote.html` | servidor HTTP local e página do controle pelo celular |
+| `cubebaby_el/qr.py` | gerador de QR code embutido (sem dependências) |
+| `cubebaby_el/site_import.py` | importação de presets pelo link do cube-baby-presets (navegador invisível) |
 | `run.py` + `.github/workflows/release.yml` | build do `.exe`/binário (PyInstaller) e publicação nas Releases ao criar uma tag `v*` |
 </details>
 

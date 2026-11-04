@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#121418">
+<title>Cube Baby</title>
+<style>
+  :root {
+    --bg:#121418; --panel:#1b1e24; --panel2:#23272f; --border:#2c313a; --text:#eceef1; --muted:#8b919c;
+    --drive:#ff7a45; --fx:#3fb6f0; --amb:#a98bff; --master:#f5c542; --ok:#46d17d; --bad:#ff5f5f;
+  }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { margin:0; background:var(--bg); color:var(--text);
+    font:15px/1.35 Inter, "Noto Sans", system-ui, -apple-system, "Segoe UI", sans-serif; }
+  body { padding:12px 16px calc(96px + env(safe-area-inset-bottom)); max-width:640px; margin:0 auto; }
+  header { display:flex; align-items:center; gap:10px; margin:4px 0 12px; }
+  .brand { font-weight:900; letter-spacing:2px; font-size:19px; }
+  .brand span { color:var(--drive); }
+  .status { margin-left:auto; display:flex; align-items:center; gap:6px; color:var(--muted); font-size:13px; }
+  .dot { width:9px; height:9px; border-radius:50%; background:var(--bad); }
+  .dot.on { background:var(--ok); }
+  .slots { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
+  .slots button { font-size:24px; font-weight:800; padding:12px 0; border-radius:12px; position:relative; }
+  .slots button.active { background:var(--text); color:var(--bg); border-color:var(--text); }
+  .slots button.dirty::after { content:""; position:absolute; top:8px; right:10px; width:7px; height:7px;
+    border-radius:50%; background:var(--master); }
+  button { font:inherit; color:var(--text); background:var(--panel2); border:1px solid var(--border);
+    border-radius:10px; padding:10px 14px; font-weight:600; touch-action:manipulation; }
+  button:active { filter:brightness(1.25); }
+  button:disabled { opacity:.45; }
+  .card { background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:12px 14px 6px;
+    margin-bottom:12px; }
+  .card h2 { display:flex; align-items:center; gap:8px; margin:0 0 6px; font-size:15px; }
+  .card h2 i { width:9px; height:9px; border-radius:50%; background:var(--c); }
+  .switch { margin-left:auto; width:48px; height:28px; border-radius:14px; background:#3a3f49; border:none;
+    padding:0; position:relative; }
+  .switch::after { content:""; position:absolute; top:4px; left:4px; width:20px; height:20px; border-radius:50%;
+    background:#9aa0aa; transition:left .15s; }
+  .switch.on { background:var(--c); }
+  .switch.on::after { left:24px; background:#fff; }
+  .row { display:grid; grid-template-columns:1fr auto; align-items:center; column-gap:10px; padding:10px 0 4px;
+    border-top:1px solid #23272e; }
+  .row input[type=range] { grid-column:1 / -1; grid-row:2; }
+  .row:first-of-type { border-top:none; }
+  .row label { font-size:12px; letter-spacing:1px; color:var(--muted); font-weight:700; }
+  .val { min-width:76px; text-align:center; font-weight:800; padding:6px 8px; border-radius:8px;
+    background:var(--panel2); border:1px solid var(--border); }
+  .ctl { display:flex; align-items:center; gap:6px; }
+  .ctl button { width:36px; height:36px; padding:0; font-size:20px; line-height:1; border-radius:9px; }
+  input[type=range] { -webkit-appearance:none; appearance:none; width:100%; height:32px; background:transparent; }
+  input[type=range]::-webkit-slider-runnable-track { height:6px; border-radius:3px;
+    background:linear-gradient(to right, var(--c) var(--p), #2e333c var(--p)); }
+  input[type=range]::-moz-range-track { height:6px; border-radius:3px; background:#2e333c; }
+  input[type=range]::-moz-range-progress { height:6px; border-radius:3px; background:var(--c); }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:24px; height:24px; margin-top:-9px;
+    border-radius:50%; background:#fff; border:3px solid var(--c); }
+  input[type=range]::-moz-range-thumb { width:18px; height:18px; border-radius:50%; background:#fff;
+    border:3px solid var(--c); }
+  .off .row { opacity:.4; }
+  .tabs { display:grid; grid-template-columns:1fr 1fr; gap:4px; padding:4px; margin-bottom:12px;
+    background:var(--panel); border:1px solid var(--border); border-radius:12px; }
+  .tabs button { border:none; background:transparent; padding:10px 0; border-radius:9px; color:var(--muted); }
+  .tabs button.active { background:var(--panel2); color:var(--text); box-shadow:0 0 0 1px var(--border); }
+  .tabs .count { display:inline-block; min-width:20px; padding:0 6px; margin-left:4px; border-radius:10px;
+    background:#343a46; font-size:12px; color:var(--text); }
+  .view[hidden] { display:none; }
+  .search { position:sticky; top:0; z-index:2; background:var(--bg); padding:2px 0 10px; }
+  .search .box { display:flex; align-items:center; gap:8px; background:var(--panel2); border:1px solid var(--border);
+    border-radius:12px; padding:0 12px; }
+  .search .box:focus-within { border-color:#5b6372; }
+  .search input { flex:1; min-width:0; font:inherit; font-size:16px; color:var(--text); background:transparent;
+    border:none; outline:none; padding:12px 0; }
+  .search .clear { border:none; background:transparent; padding:6px; color:var(--muted); font-size:18px; }
+  .chips { display:flex; gap:6px; margin-top:8px; align-items:center; }
+  .chips button { padding:6px 12px; border-radius:20px; font-size:13px; color:var(--muted); }
+  .chips button.active { color:var(--bg); background:var(--text); border-color:var(--text); }
+  .chips .n { margin-left:auto; color:var(--muted); font-size:13px; }
+  .plist { display:flex; flex-direction:column; gap:8px; }
+  .preset { text-align:left; width:100%; padding:12px 14px; border-radius:12px; background:var(--panel);
+    display:block; }
+  .preset .top { display:flex; align-items:baseline; gap:8px; }
+  .preset .name { font-weight:700; font-size:16px; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis;
+    white-space:nowrap; }
+  .preset .date { color:var(--muted); font-size:12px; font-weight:500; }
+  .preset .sum { display:flex; flex-wrap:wrap; gap:4px; margin-top:8px; }
+  .preset .sum span { font-size:12px; font-weight:600; padding:3px 8px; border-radius:6px; background:var(--panel2);
+    color:var(--muted); }
+  .preset .sum .drive { color:var(--drive); } .preset .sum .fx { color:var(--fx); }
+  .preset .sum .amb { color:var(--amb); } .preset .sum .master { color:var(--master); }
+  .preset.loaded { border-color:var(--ok); box-shadow:0 0 0 1px var(--ok) inset; }
+  .preset .badge { font-size:12px; color:var(--ok); font-weight:700; }
+  mark { background:rgba(245,197,66,.28); color:inherit; border-radius:3px; }
+  .empty { text-align:center; color:var(--muted); padding:28px 12px; }
+  .newbtn { width:100%; margin-bottom:10px; }
+  .sheet { position:fixed; inset:0; z-index:10; display:none; background:rgba(8,9,12,.7); }
+  .sheet.show { display:block; }
+  .sheet .pane { position:absolute; left:0; right:0; bottom:0; max-height:92vh; overflow:auto; background:var(--panel);
+    border-radius:18px 18px 0 0; border-top:1px solid var(--border);
+    padding:16px 16px calc(16px + env(safe-area-inset-bottom)); max-width:640px; margin:0 auto; }
+  .sheet h3 { margin:0 0 12px; font-size:17px; }
+  .sheet .name { width:100%; font:inherit; font-size:16px; color:var(--text); background:var(--panel2);
+    border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:12px; }
+  .sheet .name.bad { border-color:var(--bad); }
+  .fsec { border:1px solid var(--border); border-radius:12px; padding:10px 12px; margin-bottom:10px; }
+  .fsec .h { display:flex; align-items:center; gap:8px; font-weight:800; color:var(--c); margin-bottom:8px; }
+  .fsec .h label { margin-left:auto; color:var(--muted); font-weight:600; font-size:13px; display:flex; gap:6px;
+    align-items:center; }
+  .fsec .h input { width:20px; height:20px; accent-color:var(--c); }
+  .fgrid { display:grid; grid-template-columns:repeat(auto-fill, minmax(92px, 1fr)); gap:8px; }
+  .fgrid label { display:flex; flex-direction:column; gap:4px; font-size:11px; letter-spacing:1px; color:var(--muted);
+    font-weight:700; }
+  .fgrid input { width:100%; font:inherit; font-size:17px; font-weight:800; text-align:center; color:var(--text);
+    background:var(--panel2); border:1px solid var(--border); border-radius:9px; padding:9px 4px; }
+  .fgrid input:focus { outline:none; border-color:var(--c); }
+  .fgrid small { font-weight:500; letter-spacing:0; }
+  .sheet .acts { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }
+  .sheet .acts .primary { grid-column:1 / -1; background:var(--master); color:#17140a; border:none; font-size:16px; }
+  .sheet .tools { display:flex; gap:8px; margin-bottom:10px; }
+  .sheet .tools button { flex:1; font-size:13px; padding:8px; }
+  .toast { position:fixed; left:50%; bottom:calc(84px + env(safe-area-inset-bottom)); transform:translateX(-50%);
+    background:var(--text); color:var(--bg); padding:10px 16px; border-radius:10px; font-weight:600; font-size:14px;
+    opacity:0; pointer-events:none; transition:opacity .2s; max-width:92vw; z-index:8; }
+  .toast.show { opacity:1; }
+  .bar { position:fixed; left:0; right:0; bottom:0; padding:10px 16px calc(10px + env(safe-area-inset-bottom));
+    background:rgba(18,20,24,.94); backdrop-filter:blur(8px); border-top:1px solid var(--border); }
+  .bar .in { max-width:640px; margin:0 auto; display:flex; gap:8px; }
+  .bar .save { flex:1; background:var(--master); color:#17140a; border:none; font-size:16px; }
+  .msg { color:var(--muted); font-size:13px; min-height:18px; margin:2px 0 10px; }
+  .msg.err { color:var(--bad); }
+  .overlay { position:fixed; inset:0; display:none; align-items:center; justify-content:center; padding:24px;
+    background:rgba(10,11,14,.85); text-align:center; z-index:9; }
+  .overlay.show { display:flex; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">CUBE <span>BABY</span></div>
+  <div class="status"><div class="dot" id="dot"></div><span id="stxt">conectando…</span></div>
+</header>
+
+<div class="slots" id="slots"></div>
+<div class="tabs">
+  <button id="tab-edit" class="active">🎛 Editar</button>
+  <button id="tab-presets">📚 Presets <span class="count" id="pcount">0</span></button>
+</div>
+<div class="msg" id="msg"></div>
+
+<div class="view" id="view-edit"><div id="cards"></div></div>
+
+<div class="view" id="view-presets" hidden>
+  <div class="search">
+    <div class="box">
+      <span aria-hidden="true">🔍</span>
+      <input id="q" type="search" placeholder="Buscar preset…" autocomplete="off" enterkeyhint="search">
+      <button class="clear" id="qclear" aria-label="Limpar busca" hidden>✕</button>
+    </div>
+    <div class="chips">
+      <button data-sort="name" class="active">A–Z</button>
+      <button data-sort="recent">Mais recentes</button>
+      <span class="n" id="pn"></span>
+    </div>
+  </div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px">
+    <button id="pnew" style="grid-column:1 / -1">📝 Novo preset (digitar valores)</button>
+    <button id="psave">＋ Salvar som atual</button>
+    <button id="pimport">🔗 Importar do site</button>
+  </div>
+  <div class="plist" id="plist"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="sheet" id="sheet"><div class="pane">
+  <h3>📝 Novo preset</h3>
+  <input class="name" id="fname" placeholder="Nome do preset" autocomplete="off" enterkeyhint="next">
+  <div class="tools"><button id="fcur">Usar som atual</button><button id="fdef">Valores padrão</button></div>
+  <div id="fbody"></div>
+  <div class="acts">
+    <button id="fcancel">Cancelar</button>
+    <button id="fsave">Salvar</button>
+    <button class="primary" id="fload">Salvar e carregar no pedal</button>
+  </div>
+</div></div>
+
+<div class="bar"><div class="in">
+  <button id="discard">Descartar</button>
+  <button class="save" id="save">Gravar no pedal</button>
+</div></div>
+
+<div class="overlay" id="overlay"><div id="otxt"></div></div>
+
+<script>
+const T = new URLSearchParams(location.search).get("t") || "";
+const SECTIONS = [
+  ["drive", "Amp / Drive", ["type", "gain", "tone"]],
+  ["fx", "Modulação & Delay", ["modulation", "time", "feedback", "mix"]],
+  ["amb", "IR & Reverb", ["cabinet", "reverb"]],
+  ["master", "Saída", ["volume"]],
+];
+let S = null, ver = -1, built = false;
+const ui = {}, holding = {}, pending = {};
+let flushTimer = null;
+const $ = (id) => document.getElementById(id);
+
+function fmt(key, v) {
+  if (key === "type") return "Amp " + (v + 1);
+  if (key === "modulation") return (v === 7 || v === 8) ? "Off" : (v < 7 ? "Chorus " + (7 - v) : "Phaser " + (v - 8));
+  if (key === "cabinet") return v ? "Cab " + v : "0";
+  return String(v);
+}
+
+async function send(cmd) {
+  try {
+    const r = await fetch("/api/cmd?t=" + encodeURIComponent(T), {
+      method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(cmd)});
+    if (r.status === 403) lost("Link expirou. Leia o QR code de novo no computador.");
+  } catch (e) { setOnline(false); }
+}
+
+function queueParam(key, v) {           // agrupa os movimentos do slider (último valor vale)
+  pending[key] = v;
+  if (!flushTimer) flushTimer = setTimeout(() => {
+    flushTimer = null;
+    for (const [k, val] of Object.entries(pending)) send({op: "param", key: k, value: val});
+    for (const k in pending) delete pending[k];
+  }, 70);
+}
+
+function setLocal(key, v) {
+  const m = S.meta[key]; v = Math.max(0, Math.min(m.max, v));
+  const u = ui[key]; u.range.value = v; u.val.textContent = fmt(key, v);
+  u.range.style.setProperty("--p", (v / m.max * 100) + "%");
+  return v;
+}
+
+function build() {
+  const slots = $("slots");
+  "ABC".split("").forEach((s, i) => {
+    const b = document.createElement("button"); b.textContent = s;
+    b.onclick = () => send({op: "slot", slot: i});
+    slots.appendChild(b); ui["slot" + i] = b;
+  });
+  const cards = $("cards");
+  for (const [sec, title, keys] of SECTIONS) {
+    const c = document.createElement("div"); c.className = "card"; c.style.setProperty("--c", `var(--${sec})`);
+    const h = document.createElement("h2"); h.innerHTML = `<i></i>${title}`;
+    if (sec !== "master") {
+      const sw = document.createElement("button"); sw.className = "switch"; sw.setAttribute("aria-label", "liga/desliga");
+      sw.onclick = () => send({op: "section", section: sec, on: !sw.classList.contains("on")});
+      h.appendChild(sw); ui["sw_" + sec] = sw;
+    }
+    c.appendChild(h); ui["card_" + sec] = c;
+    for (const key of keys) {
+      const m = S.meta[key];
+      const row = document.createElement("div"); row.className = "row";
+      row.innerHTML = `<label>${m.label}</label><input type="range" min="0" max="${m.max}" step="1">
+        <div class="ctl"><button>−</button><div class="val"></div><button>+</button></div>`;
+      const range = row.querySelector("input"), val = row.querySelector(".val");
+      const [minus, plus] = row.querySelectorAll("button");
+      ui[key] = {range, val};
+      const hold = () => { holding[key] = Date.now() + 600; };
+      range.addEventListener("input", () => { hold(); queueParam(key, setLocal(key, +range.value)); });
+      range.addEventListener("pointerdown", hold);
+      minus.onclick = () => { hold(); queueParam(key, setLocal(key, +range.value - 1)); };
+      plus.onclick = () => { hold(); queueParam(key, setLocal(key, +range.value + 1)); };
+      val.onclick = () => {
+        const shift = key === "type" ? 1 : 0;
+        const hint = key === "modulation" ? "\n0–6 chorus · 7–8 off · 9–15 phaser" : "";
+        const t = prompt(`${m.label} (${shift}–${m.max + shift})${hint}`, +range.value + shift);
+        if (t !== null && /^\d+$/.test(t.trim())) { hold(); send({op: "param", key, value: setLocal(key, +t - shift)}); }
+      };
+      c.appendChild(row);
+    }
+    cards.appendChild(c);
+  }
+  $("save").onclick = () => { if (confirm(`Gravar o preset ${"ABC"[S.slot]} no pedal?`)) send({op: "save"}); };
+  $("discard").onclick = () => { if (confirm("Descartar as alterações deste preset?")) send({op: "discard"}); };
+  $("psave").onclick = () => {
+    const n = prompt("Nome do novo preset:");
+    if (n && n.trim()) { send({op: "save_preset", name: n.trim()}); toast(`“${n.trim()}” salvo`); }
+  };
+  $("pimport").onclick = () => {
+    const t = prompt("Cole o link do preset do site cube-baby-presets (ou só o número, ex.: 902):") || "";
+    if (t.trim()) { send({op: "import", text: t.trim()}); toast("Buscando preset no site…"); }
+  };
+  buildForm();
+  $("pnew").onclick = () => openForm();
+  if (location.hash === "#novo") setTimeout(() => { showTab("presets"); openForm(); }, 0);
+  $("tab-edit").onclick = () => showTab("edit");
+  $("tab-presets").onclick = () => showTab("presets");
+  $("q").addEventListener("input", () => { $("qclear").hidden = !$("q").value; renderPresets(true); });
+  $("qclear").onclick = () => { $("q").value = ""; $("qclear").hidden = true; renderPresets(true); $("q").focus(); };
+  document.querySelectorAll(".chips [data-sort]").forEach((b) => b.onclick = () => {
+    sortMode = b.dataset.sort; store("sort", sortMode);
+    document.querySelectorAll(".chips [data-sort]").forEach((x) => x.classList.toggle("active", x === b));
+    renderPresets(true);
+  });
+  document.querySelectorAll(".chips [data-sort]").forEach((x) => x.classList.toggle("active", x.dataset.sort === sortMode));
+  const q0 = new URLSearchParams(location.search).get("q");
+  if (q0) { $("q").value = q0; $("qclear").hidden = false; }
+  showTab(location.hash === "#presets" || q0 ? "presets" : (load("tab") || "edit"));
+  built = true;
+}
+
+function render() {
+  if (!built) build();
+  const on = S.connected;
+  for (let i = 0; i < 3; i++) {
+    const b = ui["slot" + i];
+    b.classList.toggle("active", S.slot === i); b.classList.toggle("dirty", S.dirty[i]); b.disabled = !on;
+  }
+  for (const [sec] of SECTIONS) {
+    if (sec === "master") continue;
+    const enabled = !!S.sections[sec];
+    ui["sw_" + sec].classList.toggle("on", enabled);
+    ui["card_" + sec].classList.toggle("off", !enabled);
+  }
+  for (const key in S.params) if (!(holding[key] > Date.now())) setLocal(key, S.params[key]);
+  $("save").disabled = !on || !S.dirty[S.slot];
+  $("discard").disabled = !on || !S.dirty[S.slot];
+  $("pcount").textContent = S.presets.length;
+  renderPresets(false);
+  const msg = $("msg"); msg.textContent = S.msg || ""; msg.classList.toggle("err", !!S.err);
+  $("stxt").textContent = on ? "pedal conectado" : "pedal desconectado";
+  $("dot").classList.toggle("on", on);
+}
+
+// ---------- presets
+let sortMode = load("sort") || "name", lastSig = "";
+function store(k, v) { try { localStorage.setItem("cb_" + k, v); } catch (e) {} }
+function load(k) { try { return localStorage.getItem("cb_" + k); } catch (e) { return null; } }
+const norm = (t) => (t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+const esc = (t) => t.replace(/[&<>"]/g, (c) => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+
+function showTab(t) {
+  $("view-edit").hidden = t !== "edit"; $("view-presets").hidden = t !== "presets";
+  $("tab-edit").classList.toggle("active", t === "edit"); $("tab-presets").classList.toggle("active", t === "presets");
+  store("tab", t); window.scrollTo({top: 0});
+}
+
+function highlight(name, q) {
+  if (!q) return esc(name);
+  const i = norm(name).indexOf(q);           // normalize NFD preserva o tamanho dos caracteres simples
+  if (i < 0 || norm(name).length !== name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").length) return esc(name);
+  return esc(name.slice(0, i)) + "<mark>" + esc(name.slice(i, i + q.length)) + "</mark>" + esc(name.slice(i + q.length));
+}
+
+function summary(p) {
+  const v = (k) => p[k] ?? 0, on = (k) => p[k] !== 0;
+  const items = [
+    ["drive", fmt("type", v("type")) + " · Gain " + v("gain") + " · Tone " + v("tone"), on("toneSection")],
+    ["fx", "Mod " + fmt("modulation", v("modulation")) + (v("mix") ? " · Dly " + v("mix") : ""), on("delaySection")],
+    ["amb", fmt("cabinet", v("cabinet")) + " · Rev " + v("reverb"), on("irSection")],
+    ["master", "Vol " + v("volume"), true],
+  ];
+  return items.map(([c, t, enabled]) => `<span class="${enabled ? c : ""}">${esc(t)}${enabled ? "" : " (off)"}</span>`).join("");
+}
+
+function renderPresets(force) {
+  const q = norm($("q").value.trim());
+  const sig = [S.presets.map((p) => p.name + p.updated).join("|"), S.loaded, q, sortMode].join("§");
+  if (!force && sig === lastSig) return;
+  lastSig = sig;
+  let list = S.presets.filter((p) => !q || norm(p.name).includes(q));
+  list.sort(sortMode === "recent"
+    ? (a, b) => (b.updated || "").localeCompare(a.updated || "")
+    : (a, b) => a.name.localeCompare(b.name, "pt-BR", {sensitivity: "base"}));
+  $("pn").textContent = q ? `${list.length} de ${S.presets.length}` : `${S.presets.length} preset(s)`;
+  const box = $("plist");
+  if (!S.presets.length) {
+    box.innerHTML = `<div class="empty">Nenhum preset salvo ainda.<br>Ajuste o som e toque em <b>＋ Salvar som atual</b>.</div>`;
+    return;
+  }
+  if (!list.length) { box.innerHTML = `<div class="empty">Nenhum preset com “${esc($("q").value.trim())}”.</div>`; return; }
+  box.innerHTML = "";
+  for (const p of list) {
+    const b = document.createElement("button");
+    const loaded = p.name === S.loaded;
+    b.className = "preset" + (loaded ? " loaded" : "");
+    b.innerHTML = `<div class="top"><div class="name">${highlight(p.name, q)}</div>
+      ${loaded ? `<span class="badge">✓ carregado</span>` : `<span class="date">${esc((p.updated || "").slice(0, 10).split("-").reverse().join("/"))}</span>`}</div>
+      <div class="sum">${summary(p.params || {})}</div>`;
+    b.onclick = () => {
+      if (!S.connected) return toast("Pedal desconectado");
+      send({op: "load", name: p.name});
+      toast(`“${p.name}” carregado no ${"ABC"[S.slot]} — toque em Gravar no pedal para manter`);
+    };
+    box.appendChild(b);
+  }
+}
+
+// ---------- formulário de novo preset
+const DEFAULTS = {type: 4, gain: 3, tone: 8, reverb: 4, feedback: 30, volume: 90, time: 12, mix: 0, modulation: 8,
+                  cabinet: 1, irSection: 1, delaySection: 1, toneSection: 1};
+const SEC_FLAG = {drive: "toneSection", fx: "delaySection", amb: "irSection"};
+const shiftOf = (k) => k === "type" ? 1 : 0;
+
+function buildForm() {
+  const body = $("fbody");
+  for (const [sec, title, keys] of SECTIONS) {
+    const box = document.createElement("div"); box.className = "fsec"; box.style.setProperty("--c", `var(--${sec})`);
+    box.innerHTML = `<div class="h">${title}${SEC_FLAG[sec] ? `<label><input type="checkbox" data-flag="${SEC_FLAG[sec]}"> ligado</label>` : ""}</div>`;
+    const grid = document.createElement("div"); grid.className = "fgrid";
+    for (const key of keys) {
+      const m = S.meta[key], sh = shiftOf(key);
+      const hint = key === "modulation" ? "7–8 off" : `${sh}–${m.max + sh}`;
+      grid.insertAdjacentHTML("beforeend", `<label>${m.label} <small>${hint}</small>
+        <input type="number" inputmode="numeric" pattern="[0-9]*" min="${sh}" max="${m.max + sh}" data-key="${key}"
+          enterkeyhint="next"></label>`);
+    }
+    box.appendChild(grid); body.appendChild(box);
+  }
+  const inputs = () => [$("fname"), ...body.querySelectorAll("input[type=number]")];
+  inputs().forEach((el, i, all) => el.addEventListener("keydown", (e) => {   // Enter = próximo campo
+    if (e.key === "Enter") { e.preventDefault(); const n = all[i + 1]; n ? n.focus() : $("fload").focus(); }
+  }));
+  body.querySelectorAll("input[type=number]").forEach((el) => el.addEventListener("blur", () => {
+    const k = el.dataset.key, sh = shiftOf(k), mx = S.meta[k].max + sh;
+    if (el.value === "") return;
+    el.value = Math.max(sh, Math.min(mx, Math.round(+el.value)));  // limita à faixa do knob
+  }));
+  $("fcur").onclick = () => fillForm({...S.params, ...flagsNow()});
+  $("fdef").onclick = () => fillForm(DEFAULTS);
+  $("fcancel").onclick = () => $("sheet").classList.remove("show");
+  $("sheet").onclick = (e) => { if (e.target.id === "sheet") $("sheet").classList.remove("show"); };
+  $("fsave").onclick = () => submitForm(false);
+  $("fload").onclick = () => submitForm(true);
+}
+function flagsNow() {
+  return {toneSection: S.sections.drive, delaySection: S.sections.fx, irSection: S.sections.amb};
+}
+function fillForm(v) {
+  $("fbody").querySelectorAll("input[type=number]").forEach((el) => { el.value = (v[el.dataset.key] ?? 0) + shiftOf(el.dataset.key); });
+  $("fbody").querySelectorAll("input[data-flag]").forEach((el) => { el.checked = !!v[el.dataset.flag]; });
+}
+function openForm() {
+  fillForm(S.connected ? {...S.params, ...flagsNow()} : DEFAULTS);
+  $("fname").value = ""; $("fname").classList.remove("bad");
+  $("sheet").classList.add("show"); setTimeout(() => $("fname").focus(), 50);
+}
+function submitForm(load) {
+  const name = $("fname").value.trim();
+  if (!name) { $("fname").classList.add("bad"); $("fname").focus(); return toast("Digite um nome"); }
+  const params = {};
+  $("fbody").querySelectorAll("input[type=number]").forEach((el) => {
+    const k = el.dataset.key, sh = shiftOf(k);
+    const v = el.value === "" ? DEFAULTS[k] + sh : Math.round(+el.value);
+    params[k] = Math.max(0, Math.min(S.meta[k].max, v - sh));
+  });
+  $("fbody").querySelectorAll("input[data-flag]").forEach((el) => { params[el.dataset.flag] = el.checked ? 1 : 0; });
+  if (S.presets.some((p) => p.name.toLowerCase() === name.toLowerCase()) && !confirm(`Já existe “${name}”. Substituir?`)) return;
+  send({op: "create_preset", name, params, load});
+  $("sheet").classList.remove("show");
+  toast(load ? `“${name}” criado e carregado no ${"ABC"[S.slot]}` : `“${name}” salvo`);
+}
+
+let toastTimer = null;
+function toast(t) {
+  const el = $("toast"); el.textContent = t; el.classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove("show"), 2600);
+}
+
+function setOnline(ok) {
+  if (!ok) { $("stxt").textContent = "sem conexão com o PC…"; $("dot").classList.remove("on"); }
+}
+function lost(text) { $("otxt").textContent = text; $("overlay").classList.add("show"); }
+
+async function poll() {
+  for (;;) {
+    try {
+      const r = await fetch(`/api/state?t=${encodeURIComponent(T)}&v=${ver}`, {cache: "no-store"});
+      if (r.status === 403) return lost("Link expirou. Leia o QR code de novo no computador.");
+      const s = await r.json();
+      if (s.closed) return lost("O controle pelo celular foi desligado no computador.");
+      if (s.v !== ver) { ver = s.v; if (s.meta) { S = s; render(); } }
+    } catch (e) {
+      setOnline(false); await new Promise((res) => setTimeout(res, 2000));
+    }
+  }
+}
+poll();
+</script>
+</body>
+</html>

@@ -119,3 +119,45 @@ def read_bank_file(path: Path) -> bytes:
             raise ValueError("Backup contém valores fora da faixa")
     return data
 
+
+
+# ---- importação a partir do texto copiado de cube-baby-presets.vercel.app
+SITE_LABELS = {  # rótulo no site -> parâmetro
+    "volume": "volume", "ir cab": "cabinet", "reverb": "reverb", "mix": "mix", "fb": "feedback",
+    "time": "time", "mod": "modulation", "tone": "tone", "gain": "gain", "type": "type",
+}
+
+
+def parse_site_text(text: str) -> dict:
+    """Extrai nome e valores dos knobs do texto de uma página de preset do site.
+
+    Funciona com o texto copiado (Ctrl+A, Ctrl+C) da página, com quebras de linha ou tudo numa linha só.
+    Retorna {"name", "author", "params"}; levanta ValueError se não achar os knobs ou se for de outro modelo.
+    """
+    flat = re.sub(r"\s+", " ", text).strip()
+    if re.search(r"\bCube Baby (AC|Bass)\b", flat, re.I):
+        raise ValueError("Esse preset é de outro modelo (Cube Baby AC ou Bass), não do CUBE Baby elétrico.")
+    m = re.search(r"valores dos knobs|knob values", flat, re.I)
+    body = flat[m.end():] if m else flat
+    params: dict[str, int] = {}
+    for label, key in SITE_LABELS.items():
+        hit = re.search(rf"(?<![a-z]){label}\s*:?\s*(\d{{1,3}})\b", body, re.I)
+        if hit:
+            params[key] = int(hit.group(1))
+    if len(params) < 6:
+        raise ValueError("Não encontrei os valores dos knobs. Abra a página do preset no site, selecione tudo "
+                         "(Ctrl+A), copie (Ctrl+C) e tente de novo.")
+    for key, v in params.items():
+        mx = PARAM_BY_KEY[key].maximum
+        if v > mx:
+            raise ValueError(f"{PARAM_BY_KEY[key].label} = {v} passa do máximo do pedal ({mx}).")
+    name = author = ""
+    t = re.search(r"Cube Baby Presets\s*-\s*(.+?)\s+Presets\b", flat)
+    if t:
+        name = re.sub(r"\s+", " ", t.group(1)).strip()
+        a = re.search(re.escape(name) + r"\s+(.+?)\s+\d+\s+\d+\s", flat[t.end():])
+        if a and len(a.group(1)) <= 40:
+            author = a.group(1).strip()
+    for sec in ("irSection", "delaySection", "toneSection"):  # o site não guarda liga/desliga
+        params.setdefault(sec, 1)
+    return {"name": name, "author": author, "params": params}
