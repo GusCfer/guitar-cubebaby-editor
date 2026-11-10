@@ -5,7 +5,7 @@ Editor de presets para o pedal **M-VAVE / Cuvave CUBE Baby** (versão para guita
 Ajuste os knobs pelo computador, ouça na hora, grave nos presets A/B/C do pedal e guarde quantos sons
 quiser no seu computador.
 
-![Cube Baby Editor](docs/screenshot.png)
+![Cube Baby Editor em uso](docs/demo.gif)
 
 > ⚠️ Este app é para o **CUBE Baby elétrico** (o pedal se identifica com o id `0x4F06`).
 > Para o **Cube Baby AC** (violão), use o [cubebaby-editor](https://github.com/walbertfreitas/cubebaby-editor).
